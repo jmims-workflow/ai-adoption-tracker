@@ -26,6 +26,8 @@ All seed data is fictional and the UI labels it as demo data. Keep it that way.
 - `server/routes/`: `api.js` (read endpoints and pulse), `ai.js` (invite, leadership update, review summary), `import.js` (CSV preview and commit).
 - `client/src/pages/`: Overview, Pulse, MyImpact, Import.
 - `sample-data/`: sample usage export CSV (`email,date,active_days,message_count`).
+- `Dockerfile`, `.dockerignore`: production image for Google Cloud Run (builds the client, Express serves it on `PORT`). Steps in `DEPLOY.md`.
+- `docs/screenshots/`: README screenshots, taken in demo mode.
 
 ## Commands
 

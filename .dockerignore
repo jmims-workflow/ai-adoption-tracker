@@ -1,0 +1,15 @@
+node_modules
+**/node_modules
+client/dist
+server/data
+*.db
+*.db-*
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+.DS_Store
+docs
+Dockerfile
+.dockerignore
