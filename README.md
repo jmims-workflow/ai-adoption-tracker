@@ -30,12 +30,22 @@ Colleagues who help others get started are credited as champions by the people t
 
 ### Screenshots
 
-_Placeholders. Add images to `docs/screenshots/`._
+All screenshots were taken in demo mode with the fictional seed data.
 
-- Overview: `docs/screenshots/overview.png`
-- Weekly pulse (phone): `docs/screenshots/pulse.png`
-- My AI impact (phone): `docs/screenshots/my-impact.png`
-- Import: `docs/screenshots/import.png`
+**Overview** (desktop)
+
+![Overview: this week's headline, three key numbers, the team that needs attention, the leadership update and the team adoption chart](docs/screenshots/overview.png)
+
+**Weekly pulse** and **My AI impact** (phone)
+
+<p>
+  <img src="docs/screenshots/pulse.png" alt="Weekly pulse on a phone: did AI save you time, an optional win and who showed you how" width="300">
+  <img src="docs/screenshots/my-impact.png" alt="My AI impact on a phone: hours saved this month, where the time came from, colleagues helped and wins" width="300">
+</p>
+
+**Import preview**
+
+![Import preview: 27 rows in the sample file, 25 matched to employees, 2 skipped, and adoption moving from 72% to 80%](docs/screenshots/import.png)
 
 ## Run it locally
 
@@ -74,6 +84,14 @@ npm start
 ```
 
 Builds the client and serves the whole app from Express on http://localhost:3001.
+
+## Deploying to Google Cloud Run
+
+The repo includes a `Dockerfile` that builds the client and serves everything from the Express server on the port Cloud Run provides in `PORT`. The app runs in demo mode with no API key. See [DEPLOY.md](DEPLOY.md) for beginner-friendly, copy-paste steps from Google Cloud Shell.
+
+### Known demo limitation: data resets
+
+The app keeps using SQLite, stored inside the container. Cloud Run containers do not have permanent disk, so every time a new instance starts (after a deploy, after the service scales to zero and wakes up, or when Cloud Run adds an instance) the database is created again and reseeded with the demo data. Pulse answers and imports made on the live site disappear at that point, and two instances running at once can show different data. That is fine for a demo. A real deployment would move the data to a managed database such as Cloud SQL.
 
 ## Importing usage data
 
