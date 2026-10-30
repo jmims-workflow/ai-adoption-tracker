@@ -53,6 +53,17 @@ export function createSchema() {
       UNIQUE (employee_id, week_start)
     );
 
+    -- A person's own prompt for a use case, pasted in the weekly pulse. Latest one wins.
+    CREATE TABLE IF NOT EXISTS recipes (
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      use_case_id INTEGER NOT NULL REFERENCES use_cases(id),
+      prompt TEXT NOT NULL,
+      shareable INTEGER NOT NULL DEFAULT 0,
+      week_start TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (employee_id, use_case_id)
+    );
+
     CREATE TABLE IF NOT EXISTS imports (
       id INTEGER PRIMARY KEY,
       filename TEXT NOT NULL,
@@ -61,11 +72,16 @@ export function createSchema() {
       matched_count INTEGER NOT NULL
     );
   `);
+  // Databases created before the share checkbox existed: add the column, private by default.
+  if (!db.prepare('PRAGMA table_info(recipes)').all().some((c) => c.name === 'shareable')) {
+    db.exec('ALTER TABLE recipes ADD COLUMN shareable INTEGER NOT NULL DEFAULT 0');
+  }
 }
 
 export function resetSchema() {
   db.exec(`
     DROP TABLE IF EXISTS imports;
+    DROP TABLE IF EXISTS recipes;
     DROP TABLE IF EXISTS pulse_responses;
     DROP TABLE IF EXISTS usage_weekly;
     DROP TABLE IF EXISTS use_cases;

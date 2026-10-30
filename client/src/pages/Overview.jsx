@@ -11,20 +11,56 @@ const TEAM_COLORS = {
   Operations: '#6250d6',
 };
 
-function NeedsAttention({ attention }) {
-  const [invite, setInvite] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+const NEXT_STEP_OPTIONS = [
+  {
+    kind: 'ask',
+    label: 'Ask a champion',
+    copy: 'Copy note',
+    describe: (c, own, savedPrivate) =>
+      own
+        ? `A short note checking ${c.name} is still happy for their prompt to be shared, with an easy way to say no.`
+        : savedPrivate
+          ? `A short note asking ${c.name} if they would be willing to share the prompt they saved, with an easy way to say no.`
+          : `A short note asking ${c.name} if they would share their approach, with an easy way to say no.`,
+  },
+  {
+    kind: 'run',
+    label: 'Run it yourself',
+    copy: 'Copy invite',
+    describe: (c, own) =>
+      `An invite to a 15 minute session you lead, using ${own ? `${c.name}'s saved prompt, credited to them` : 'the starter recipe'}.`,
+  },
+  {
+    kind: 'share',
+    label: 'Share the recipe',
+    copy: 'Copy message',
+    describe: (c, own) =>
+      own ? `A message to the team with ${c.name}'s prompt, credited to them, and one tip.` : 'A message to the team with the starter recipe and one tip.',
+  },
+];
 
-  async function draft() {
-    setLoading(true);
+function NeedsAttention({ attention }) {
+  const [drafts, setDrafts] = useState({});
+  const [active, setActive] = useState(null);
+  const [loading, setLoading] = useState(null);
+  const [error, setError] = useState(null);
+  const { champion, recipe } = attention;
+  const own = recipe.source === 'champion';
+  const options = NEXT_STEP_OPTIONS.filter((o) => champion || o.kind !== 'ask');
+  const current = options.find((o) => o.kind === active);
+  const draft = active ? drafts[active] : null;
+
+  async function generate(kind) {
+    setLoading(kind);
+    setActive(kind);
     setError(null);
     try {
-      setInvite(await api.post('/ai/invite'));
+      const result = await api.post('/ai/next-step', { kind });
+      setDrafts((d) => ({ ...d, [kind]: result }));
     } catch (e) {
       setError(e.message);
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   }
 
@@ -40,17 +76,42 @@ function NeedsAttention({ attention }) {
           <RiskTag risk={attention.useCase.risk} /> <span className="small">{attention.useCase.riskNote}</span>
         </p>
       )}
-      <div className="btn-row">
-        <AiButton loading={loading} onClick={draft}>
-          {invite ? 'Draft again' : 'Draft the invite'}
-        </AiButton>
-        {invite && <CopyButton text={invite.text} label="Copy invite" />}
-      </div>
+      {champion && (
+        <p style={{ marginTop: 12 }}>
+          <strong>Closest champion: </strong>
+          {champion.name}, {champion.team}
+          <span className="small muted line-below">{champion.reason}</span>
+        </p>
+      )}
+      <p style={{ marginTop: 12 }}>
+        <strong>Recipe: </strong>
+        {own ? `${recipe.author}'s saved prompt` : 'Starter recipe from the playbook'}
+        <span className="small muted line-below">
+          {own
+            ? 'Saved in their weekly pulse and marked OK to share, so drafts credit it to them.'
+            : recipe.savedPrivate
+              ? `${champion.name} saved a prompt for this but has not marked it OK to share, so drafts credit it to no one.`
+              : `${champion ? `${champion.name} has not saved a prompt for this yet, so` : 'No champion has saved a prompt for this yet, so'} drafts credit it to no one.`}
+        </span>
+      </p>
+      <ul className="option-list" aria-label="Choose a next step to draft">
+        {options.map((o) => (
+          <li key={o.kind}>
+            <AiButton loading={loading === o.kind} disabled={Boolean(loading)} aria-pressed={active === o.kind} onClick={() => generate(o.kind)}>
+              {o.label}
+            </AiButton>
+            <span className="small muted">{o.describe(champion, own, recipe.savedPrivate)}</span>
+          </li>
+        ))}
+      </ul>
       <ErrorMessage error={error} />
-      {invite && (
+      {draft && (
         <div aria-live="polite">
-          <div className="ai-output">{invite.text}</div>
-          <DemoNote demo={invite.demo} />
+          <div className="ai-output">{draft.text}</div>
+          <div className="btn-row">
+            <CopyButton text={draft.text} label={current?.copy ?? 'Copy'} />
+          </div>
+          <DemoNote demo={draft.demo} />
         </div>
       )}
     </Card>

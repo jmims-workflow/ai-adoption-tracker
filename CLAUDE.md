@@ -23,7 +23,8 @@ All seed data is fictional and the UI labels it as demo data. Keep it that way.
 - `server/seed.js`: deterministic demo data (25 employees, 8 weeks). `npm run seed` resets it.
 - `server/metrics.js`: all aggregation (adoption, hours, teams, use cases, champions, headline, needs attention).
 - `server/ai.js`: Claude calls plus demo-mode fallbacks.
-- `server/routes/`: `api.js` (read endpoints and pulse), `ai.js` (invite, leadership update, review summary), `import.js` (CSV preview and commit).
+- `server/playbook.js`: starter recipe (prompt and tip) per use case.
+- `server/routes/`: `api.js` (read endpoints and pulse), `ai.js` (next step drafts, leadership update, review summary), `import.js` (CSV preview and commit).
 - `client/src/pages/`: Overview, Pulse, MyImpact, Import.
 - `sample-data/`: sample usage export CSV (`email,date,active_days,message_count`).
 - `Dockerfile`, `.dockerignore`: production image for Google Cloud Run (builds the client, Express serves it on `PORT`). Steps in `DEPLOY.md`.
@@ -43,4 +44,6 @@ All seed data is fictional and the UI labels it as demo data. Keep it that way.
 - **No keys in the browser.** The API key is read from the environment by the server only. Never send it to the client, never prefix it with `VITE_`, never put it in client code, and never commit a real key. `.env` is git-ignored; `.env.example` documents the variables.
 - **Copy style.** No em dashes or en dashes in UI copy, docs, prompts or sample AI text. No emoji. `server/ai.js` also strips dashes from model output.
 - **Visual design.** Manrope, tabular numbers for figures, the color tokens in `styles.css`. Marigold (`--ai`) is only for buttons that call the AI. No gradients. Real buttons and labels, 44px minimum touch targets, text contrast of at least 4.5:1. The pulse and My AI impact screens are phone-first.
-- Headlines and "needs attention" logic are rule-based in `metrics.js` so they are deterministic and free; only the invite, leadership update and review summary use Claude.
+- Headlines and "needs attention" logic are rule-based in `metrics.js` so they are deterministic and free; only the next step drafts, leadership update and review summary use Claude.
+- **Champions' time.** Never say a champion has offered or agreed to anything, in demo text or prompts. The closest champion is picked in `metrics.js` (same team, then a team with shared use cases, then top overall) with a one-line reason.
+- **Recipe credit.** A recipe is quoted or credited only when it is the champion's own prompt, saved from the pulse (`recipes` table) with "OK to share" checked. A private prompt's text never goes into a draft or a Claude call; "Ask a champion" only asks if they would share it. Otherwise drafts use the playbook's starter recipe, labeled "Starter recipe" and credited to no one; "Run it yourself" may thank the champion as a good example of the use case, never for the recipe.

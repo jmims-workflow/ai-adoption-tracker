@@ -23,8 +23,8 @@ Colleagues who help others get started are credited as champions by the people t
 
 | Screen | Who it is for | What it does |
 | --- | --- | --- |
-| Overview | Enablement lead | This week's answer as a headline, three numbers, the team that needs attention (with an AI-drafted invite), and an AI-written leadership update. Tabs for Teams, Use cases (with risk tags) and Champions. |
-| Weekly pulse | Every employee | Did AI save you time? Roughly how much? Optional win and "Did someone show you how?" |
+| Overview | Enablement lead | This week's answer as a headline, three numbers, the team that needs attention (with the closest champion and three AI-drafted options: ask the champion, run a 15 minute session yourself, or share the recipe), and an AI-written leadership update. Tabs for Teams, Use cases (with risk tags) and Champions. |
+| Weekly pulse | Every employee | Did AI save you time? Roughly how much? Optional win, optional prompt (saved as your recipe for that use case, private unless you tick "OK to share this with other teams", and credited to you if shared) and "Did someone show you how?" |
 | My AI impact | Every employee | Hours saved this month, where the time came from, colleagues helped, wins in your own words, and "Copy summary for my review". |
 | Import | Admin | Upload a usage export CSV, preview matches and skipped rows, see the projected adoption change, then update the numbers. |
 
@@ -63,7 +63,7 @@ npm run dev
 
 Then open http://localhost:5173. The API runs on port 3001 and the database is created and seeded with demo data on first start.
 
-No API key is needed. Without one, the app runs in **demo mode**: the AI features (invite draft, leadership update, review summary) return realistic sample text built from the real numbers, marked "Sample text" in the UI.
+No API key is needed. Without one, the app runs in **demo mode**: the AI features (next step drafts, leadership update, review summary) return realistic sample text built from the real numbers, marked "Sample text" in the UI.
 
 ### Turning on live AI
 

@@ -106,6 +106,37 @@ const WINS = {
   ],
 };
 
+// Prompts a few champions pasted into the pulse and marked OK to share, saved as their recipe for that use case.
+// Each is attached to that champion's latest pulse answer for the use case, else their latest answer.
+// Hannah's process documentation prompt makes the default Operations suggestion show a credited recipe.
+const SAVED_PROMPTS = [
+  [
+    'Maya Chen',
+    1,
+    'Paste my call notes below. Write a recap email to [customer] in a friendly, direct tone: one line of thanks, the decisions we made, then next steps with owners and dates. Under 120 words, no jargon.',
+  ],
+  [
+    'Diego Alvarez',
+    2,
+    'Research [company] using only public sources. Give me five bullets: what they sell, recent news, main competitors, one likely pain point we could help with, and an opening question for a first call.',
+  ],
+  [
+    'Hannah Weiss',
+    3,
+    'Here is a FlowOS ticket thread with personal details removed. Summarize it for the next shift: what the customer is trying to do, what we have tried, what is still broken and the next action. Five bullets at most.',
+  ],
+  [
+    'Hannah Weiss',
+    7,
+    'Interview me about a process I run, one question at a time. When you have enough, write it as a numbered checklist new starters can follow, with a one-line purpose at the top and the tools needed for each step.',
+  ],
+  [
+    'Jordan Kim',
+    5,
+    'Here are this month\'s Insight numbers for [account]. Write three short paragraphs for their executive sponsor: the headline change, what is driving it, and one thing we recommend next. Keep every number exactly as given.',
+  ],
+];
+
 function mulberry32(seed) {
   let a = seed;
   return () => {
@@ -206,6 +237,18 @@ export function seed() {
         insertPulse.run(id, week, 'yes', minutes, useCaseId, win, taughtBy, createdAt);
       });
     });
+
+    const latestAnswer = db.prepare(
+      'SELECT MAX(week_start) AS w FROM pulse_responses WHERE employee_id = ? AND (? IS NULL OR use_case_id = ?)'
+    );
+    const insertRecipe = db.prepare(
+      'INSERT INTO recipes (employee_id, use_case_id, prompt, shareable, week_start, updated_at) VALUES (?, ?, ?, 1, ?, ?)'
+    );
+    for (const [name, useCaseId, prompt] of SAVED_PROMPTS) {
+      const id = idByName[name];
+      const w = latestAnswer.get(id, useCaseId, useCaseId).w || latestAnswer.get(id, null, null).w;
+      if (w) insertRecipe.run(id, useCaseId, prompt, w, `${addDays(w, 4)}T12:00:00Z`);
+    }
 
     insertImport.run('northstar-ai-usage-2026-10-26.csv', '2026-10-27T09:12:00Z', PEOPLE.length, PEOPLE.length);
   });

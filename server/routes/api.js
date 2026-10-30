@@ -33,7 +33,7 @@ router.get('/me/:id', (req, res) => {
 });
 
 router.post('/pulse', (req, res) => {
-  const { employeeId, savedTime, amount, useCaseId, winText, taughtById } = req.body || {};
+  const { employeeId, savedTime, amount, useCaseId, winText, promptText, shareable, taughtById } = req.body || {};
   const id = Number(employeeId);
   const employee = db.prepare('SELECT id FROM employees WHERE id = ?').get(id);
   if (!employee) return res.status(400).json({ error: 'Choose who you are first.' });
@@ -57,7 +57,9 @@ router.post('/pulse', (req, res) => {
   }
 
   const win = typeof winText === 'string' && winText.trim() ? winText.trim().slice(0, 500) : null;
+  const prompt = typeof promptText === 'string' && promptText.trim() ? promptText.trim().slice(0, 2000) : null;
   const week = currentWeek();
+  const now = new Date().toISOString();
 
   db.prepare(
     `INSERT INTO pulse_responses (employee_id, week_start, saved_time, minutes, use_case_id, win_text, taught_by_id, created_at)
@@ -65,10 +67,19 @@ router.post('/pulse', (req, res) => {
      ON CONFLICT (employee_id, week_start) DO UPDATE SET
        saved_time = excluded.saved_time, minutes = excluded.minutes, use_case_id = excluded.use_case_id,
        win_text = excluded.win_text, taught_by_id = excluded.taught_by_id, created_at = excluded.created_at`
-  ).run(id, week, savedTime, minutes, useCase, win, teacher, new Date().toISOString());
+  ).run(id, week, savedTime, minutes, useCase, win, teacher, now);
+
+  // A pasted prompt becomes this person's recipe for the use case they picked. Leaving it blank keeps the old one.
+  if (prompt && useCase) {
+    db.prepare(
+      `INSERT INTO recipes (employee_id, use_case_id, prompt, shareable, week_start, updated_at) VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT (employee_id, use_case_id) DO UPDATE SET
+         prompt = excluded.prompt, shareable = excluded.shareable, week_start = excluded.week_start, updated_at = excluded.updated_at`
+    ).run(id, useCase, prompt, shareable === true ? 1 : 0, week, now);
+  }
 
   const impact = employeeImpact(id);
-  res.json({ ok: true, monthHours: impact.monthHours, monthLabel: impact.monthLabel, minutes });
+  res.json({ ok: true, monthHours: impact.monthHours, monthLabel: impact.monthLabel, minutes, recipeSaved: Boolean(prompt && useCase), recipeShareable: Boolean(prompt && useCase && shareable === true) });
 });
 
 export default router;

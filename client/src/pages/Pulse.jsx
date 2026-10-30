@@ -27,7 +27,7 @@ function Choice({ name, value, label, checked, onChange }) {
   );
 }
 
-function ThankYou({ result, name, onEdit }) {
+function ThankYou({ result, name, useCase, onEdit }) {
   return (
     <div className="card thanks" role="status">
       <svg className="check-mark" viewBox="0 0 56 56" aria-hidden="true">
@@ -47,6 +47,12 @@ function ThankYou({ result, name, onEdit }) {
       <p className="muted small" style={{ marginTop: 8 }}>
         It is all in your own record, ready for your next review.
       </p>
+      {result.recipeSaved && useCase && (
+        <p className="muted small" style={{ marginTop: 8 }}>
+          Your prompt is saved as your recipe for {useCase.name}.{' '}
+          {result.recipeShareable ? 'It may be shared with other teams, credited to you.' : 'It stays private unless you mark it OK to share.'}
+        </p>
+      )}
       <div className="btn-row" style={{ flexDirection: 'column' }}>
         <Link to="/me" className="btn btn-primary btn-block">
           See my impact
@@ -67,6 +73,8 @@ export default function Pulse() {
   const [amount, setAmount] = useState('');
   const [useCaseId, setUseCaseId] = useState('');
   const [winText, setWinText] = useState('');
+  const [promptText, setPromptText] = useState('');
+  const [shareable, setShareable] = useState(false);
   const [taughtById, setTaughtById] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
@@ -84,12 +92,15 @@ export default function Pulse() {
 
   const me = employees.find((e) => e.id === viewerId);
   const colleagues = employees.filter((e) => e.id !== viewerId);
+  const pickedUseCase = useCases.find((u) => String(u.id) === useCaseId);
+  const askPrompt = savedTime === 'yes';
 
   async function submit(e) {
     e.preventDefault();
     setError(null);
     if (!savedTime) return setError('Answer the first question to send.');
     if (savedTime === 'yes' && !amount) return setError('Choose roughly how much time you saved.');
+    if (askPrompt && promptText.trim() && !pickedUseCase) return setError('Pick what it was for so we can save your prompt as a recipe.');
     setSending(true);
     try {
       const r = await api.post('/pulse', {
@@ -98,6 +109,8 @@ export default function Pulse() {
         amount: savedTime === 'yes' ? amount : null,
         useCaseId: savedTime === 'yes' && useCaseId ? Number(useCaseId) : null,
         winText,
+        promptText: askPrompt ? promptText : '',
+        shareable: askPrompt && shareable,
         taughtById: taughtById ? Number(taughtById) : null,
       });
       setResult(r);
@@ -112,7 +125,7 @@ export default function Pulse() {
   if (result && me) {
     return (
       <div className="narrow">
-        <ThankYou result={result} name={me.name} onEdit={() => setResult(null)} />
+        <ThankYou result={result} name={me.name} useCase={pickedUseCase} onEdit={() => setResult(null)} />
       </div>
     );
   }
@@ -186,6 +199,35 @@ export default function Pulse() {
             onChange={(e) => setWinText(e.target.value)}
           />
         </div>
+
+        {askPrompt && (
+          <div>
+            <label htmlFor="prompt">
+              Paste the prompt you used (optional){' '}
+              <span className="hint">
+                {pickedUseCase
+                  ? `Saved as your recipe for ${pickedUseCase.name}.`
+                  : 'Pick what it was for above to save it as your recipe.'}
+              </span>
+            </label>
+            <textarea
+              id="prompt"
+              rows={3}
+              maxLength={2000}
+              placeholder="For example: Summarize this thread in five bullets with the next action."
+              aria-describedby="prompt-note"
+              value={promptText}
+              onChange={(e) => setPromptText(e.target.value)}
+            />
+            <p id="prompt-note" className="hint field-note">
+              Remove customer names or private details before sharing.
+            </p>
+            <label className="check-row">
+              <input type="checkbox" checked={shareable} onChange={(e) => setShareable(e.target.checked)} />
+              <span>OK to share this with other teams (credited to me)</span>
+            </label>
+          </div>
+        )}
 
         <div>
           <label htmlFor="taught">

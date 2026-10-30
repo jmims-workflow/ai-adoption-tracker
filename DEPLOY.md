@@ -112,7 +112,7 @@ The URL stays the same.
 
 You can skip this whole section. The app works in demo mode without it.
 
-To have the invite, leadership update and review summary written by Claude, give the app an `ANTHROPIC_API_KEY`. Store it in Secret Manager so the key never appears in your code, your terminal history or the Cloud Run settings page.
+To have the next step drafts, leadership update and review summary written by Claude, give the app an `ANTHROPIC_API_KEY`. Store it in Secret Manager so the key never appears in your code, your terminal history or the Cloud Run settings page.
 
 You need an API key from https://console.anthropic.com. Using it costs money on your Anthropic account.
 
