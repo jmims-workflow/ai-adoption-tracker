@@ -17,7 +17,7 @@ The enablement lead is left without a clear answer to the two questions leadersh
 This app avoids the logging trap in two ways:
 
 1. **Adoption data comes from an imported usage export.** Who used AI, and how often, comes straight from the AI tool's admin usage report. Nobody logs anything to be counted.
-2. **Impact data comes from a 20-second weekly pulse, and every answer pays the employee back.** Time saved and wins build the employee's own "My AI impact" record, which they can turn into a review-ready paragraph for their performance review.
+2. **Impact data comes from a weekly pulse of two quick questions, and every answer pays the employee back.** Time saved and wins build the employee's own "My AI impact" record, which they can turn into a review-ready paragraph for their performance review.
 
 Colleagues who help others get started are credited as champions by the people they helped, so peer teaching becomes visible too.
 
@@ -30,7 +30,7 @@ Colleagues who help others get started are credited as champions by the people t
 | My AI impact | Every employee | Hours saved this month, where the time came from, colleagues helped, wins in your own words, and "Copy summary for my review". |
 | Import | Admin | Upload a usage export CSV, preview matches and skipped rows, see the projected adoption change, then update the numbers. |
 
-Works on any screen, so people can answer the pulse from Slack on a phone or a laptop in about 20 seconds.
+Works on any screen, so people can answer the pulse from Slack on a phone or a laptop. Two quick questions, plus an optional win or prompt to share.
 
 ### Screenshots
 

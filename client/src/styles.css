@@ -551,6 +551,24 @@ label,
   font-size: 14px;
 }
 
+/* Text link that opens optional fields */
+.link-button {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  color: var(--accent-hover);
+}
+
 /* Tabs */
 .tablist {
   display: flex;

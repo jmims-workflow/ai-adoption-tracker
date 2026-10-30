@@ -6,7 +6,7 @@ AI Adoption & Impact Tracker for Northstar Systems, a fictional company (product
 
 Design principle:
 1. Adoption data (who used AI, how often) comes from an imported usage export. Nobody logs anything to be counted.
-2. Impact data (time saved, wins) comes from a 20-second weekly pulse, and every answer builds the employee's own "My AI impact" record for performance reviews.
+2. Impact data (time saved, wins) comes from a weekly pulse of two quick questions (plus an optional win or prompt to share), and every answer builds the employee's own "My AI impact" record for performance reviews.
 
 All seed data is fictional and the UI labels it as demo data. Keep it that way.
 
