@@ -58,6 +58,7 @@ export function createSchema() {
       employee_id INTEGER NOT NULL REFERENCES employees(id),
       use_case_id INTEGER NOT NULL REFERENCES use_cases(id),
       prompt TEXT NOT NULL,
+      shareable INTEGER NOT NULL DEFAULT 0,
       week_start TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       PRIMARY KEY (employee_id, use_case_id)
@@ -71,6 +72,10 @@ export function createSchema() {
       matched_count INTEGER NOT NULL
     );
   `);
+  // Databases created before the share checkbox existed: add the column, private by default.
+  if (!db.prepare('PRAGMA table_info(recipes)').all().some((c) => c.name === 'shareable')) {
+    db.exec('ALTER TABLE recipes ADD COLUMN shareable INTEGER NOT NULL DEFAULT 0');
+  }
 }
 
 export function resetSchema() {

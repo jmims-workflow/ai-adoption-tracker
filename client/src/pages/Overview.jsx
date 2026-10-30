@@ -16,10 +16,12 @@ const NEXT_STEP_OPTIONS = [
     kind: 'ask',
     label: 'Ask a champion',
     copy: 'Copy note',
-    describe: (c, own) =>
+    describe: (c, own, savedPrivate) =>
       own
-        ? `A short note asking ${c.name} if their saved prompt can be shared, with an easy way to say no.`
-        : `A short note asking ${c.name} if they would share their approach, with an easy way to say no.`,
+        ? `A short note checking ${c.name} is still happy for their prompt to be shared, with an easy way to say no.`
+        : savedPrivate
+          ? `A short note asking ${c.name} if they would be willing to share the prompt they saved, with an easy way to say no.`
+          : `A short note asking ${c.name} if they would share their approach, with an easy way to say no.`,
   },
   {
     kind: 'run',
@@ -86,8 +88,10 @@ function NeedsAttention({ attention }) {
         {own ? `${recipe.author}'s saved prompt` : 'Starter recipe from the playbook'}
         <span className="small muted line-below">
           {own
-            ? 'Saved in their weekly pulse, so drafts credit it to them.'
-            : `${champion ? `${champion.name} has not saved a prompt for this yet, so` : 'No champion has saved a prompt for this yet, so'} drafts credit it to no one.`}
+            ? 'Saved in their weekly pulse and marked OK to share, so drafts credit it to them.'
+            : recipe.savedPrivate
+              ? `${champion.name} saved a prompt for this but has not marked it OK to share, so drafts credit it to no one.`
+              : `${champion ? `${champion.name} has not saved a prompt for this yet, so` : 'No champion has saved a prompt for this yet, so'} drafts credit it to no one.`}
         </span>
       </p>
       <ul className="option-list" aria-label="Choose a next step to draft">
@@ -96,7 +100,7 @@ function NeedsAttention({ attention }) {
             <AiButton loading={loading === o.kind} disabled={Boolean(loading)} aria-pressed={active === o.kind} onClick={() => generate(o.kind)}>
               {o.label}
             </AiButton>
-            <span className="small muted">{o.describe(champion, own)}</span>
+            <span className="small muted">{o.describe(champion, own, recipe.savedPrivate)}</span>
           </li>
         ))}
       </ul>

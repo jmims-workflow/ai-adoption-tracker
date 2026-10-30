@@ -85,8 +85,10 @@ const NEXT_STEP_INSTRUCTIONS = {
   ask: (f) =>
     `Draft a short, low-pressure note (under 80 words) from the AI enablement lead to ${f.champion}, an AI champion on the ${f.championTeam} team. ` +
     (f.own
-      ? `They saved a prompt for ${inSentence(f.useCase)} in their weekly pulse. Ask whether they would be happy for it to be shared with the ${f.team} team, credited to them by name, with nothing else needed from them. Do not quote the prompt. `
-      : `Ask whether they would be willing to share their approach to ${inSentence(f.useCase)} so the ${f.team} team can get started. Keep the ask small and say it would be credited to them by name. `) +
+      ? `They saved a prompt for ${inSentence(f.useCase)} in their weekly pulse and marked it OK to share. Say you would like to share it with the ${f.team} team, credited to them by name, and check they are still happy with that, with nothing else needed from them. Do not quote the prompt. `
+      : f.savedPrivate
+        ? `They saved a prompt for ${inSentence(f.useCase)} in their weekly pulse but kept it private. Ask whether they would be willing to share it with the ${f.team} team, credited to them by name, and suggest removing any customer names or private details first. You do not have the prompt: do not quote or describe it. `
+        : `Ask whether they would be willing to share their approach to ${inSentence(f.useCase)} so the ${f.team} team can get started. Keep the ask small and say it would be credited to them by name. `) +
     'Make it easy to say no, with no reason needed. ' +
     NO_CLAIMS +
     `Start with "Hi ${f.championFirst}," and end with a sign-off from AI Enablement. Plain text only.`,
@@ -115,11 +117,11 @@ const NEXT_STEP_DEMOS = {
           [
             `Hi ${f.championFirst},`,
             '',
-            `Thank you for saving your prompt for ${inSentence(f.useCase)} in the weekly pulse. ${f.team} is just getting started with AI, and I think it could really help them.`,
+            `Thank you for saving your prompt for ${inSentence(f.useCase)} in the weekly pulse and marking it OK to share. ${f.team} is just getting started with AI, and I think it could really help them.`,
             '',
-            'Would you be happy for me to share it with the team? It would be credited to you by name, and you would not need to do anything else.',
+            'I would like to share it with the team, credited to you by name. You would not need to do anything else.',
             '',
-            'If you would rather keep it to yourself, just reply "not now" and that is completely fine.',
+            'If you would rather I did not, just reply "not now" and I will leave it out.',
             '',
             'Thanks,',
             'AI Enablement',
@@ -127,42 +129,69 @@ const NEXT_STEP_DEMOS = {
           [
             `Hi ${f.championFirst},`,
             '',
-            `A quick question with no obligation attached. You saved a prompt for ${inSentence(f.useCase)} in your weekly pulse, and it looks like a good fit for ${f.team}, who are starting out with AI.`,
+            `A quick check with no obligation attached. You marked your prompt for ${inSentence(f.useCase)} as OK to share, and it looks like a good fit for ${f.team}, who are starting out with AI.`,
             '',
-            'Are you OK with me sharing it with the team, credited to you by name? A one-word reply is plenty.',
+            'Are you still happy for me to share it with them, credited to you by name? A one-word reply is plenty.',
             '',
-            'If you would prefer not, a simple no is completely fine.',
+            'If you have changed your mind, a simple no is completely fine.',
             '',
             'Thanks,',
             'AI Enablement',
           ],
         ]
-      : [
-          [
-            `Hi ${f.championFirst},`,
-            '',
-            `${f.team} is just getting started with AI, and ${inSentence(f.useCase)} looks like an easy first step for them. You have helped ${f.helpedText} get going, so I wondered if you would be open to sharing how you approach it.`,
-            '',
-            'Even just the prompt you use and one tip would be plenty. I can do the rest, and it would be credited to you by name.',
-            '',
-            'No pressure at all. If you are busy or would rather not, just reply "not now" and that is completely fine.',
-            '',
-            'Thanks,',
-            'AI Enablement',
+      : f.savedPrivate
+        ? [
+            [
+              `Hi ${f.championFirst},`,
+              '',
+              `I saw you saved a prompt for ${inSentence(f.useCase)} in the weekly pulse. ${f.team} is just getting started with AI, and I think it could really help them.`,
+              '',
+              'Would you be willing to share it with the team? It would be credited to you by name. If you do, please remove any customer names or private details first.',
+              '',
+              'No pressure at all. If you would rather keep it to yourself, just reply "not now" and that is completely fine.',
+              '',
+              'Thanks,',
+              'AI Enablement',
+            ],
+            [
+              `Hi ${f.championFirst},`,
+              '',
+              `A quick question with no obligation attached. You saved a prompt for ${inSentence(f.useCase)} in your weekly pulse, and it could be a good fit for ${f.team}, who are starting out with AI.`,
+              '',
+              'Would you be OK sharing it with them, credited to you by name? You can mark it OK to share next time you answer the pulse, after removing any customer names or private details.',
+              '',
+              'If you would prefer not, a simple no is completely fine.',
+              '',
+              'Thanks,',
+              'AI Enablement',
+            ],
+          ]
+        : [
+            [
+              `Hi ${f.championFirst},`,
+              '',
+              `${f.team} is just getting started with AI, and ${inSentence(f.useCase)} looks like an easy first step for them. You have helped ${f.helpedText} get going, so I wondered if you would be open to sharing how you approach it.`,
+              '',
+              'Even just the prompt you use and one tip would be plenty. I can do the rest, and it would be credited to you by name.',
+              '',
+              'No pressure at all. If you are busy or would rather not, just reply "not now" and that is completely fine.',
+              '',
+              'Thanks,',
+              'AI Enablement',
+            ],
+            [
+              `Hi ${f.championFirst},`,
+              '',
+              `A quick question with no obligation attached. ${f.team} is starting out with AI and I would like to begin with ${inSentence(f.useCase)}. Would you be willing to share the prompt or approach that works for you?`,
+              '',
+              'A few lines in a reply is enough. I will turn it into something the team can use and credit it to you by name.',
+              '',
+              'If now is not a good time, a simple no is completely fine.',
+              '',
+              'Thanks,',
+              'AI Enablement',
+            ],
           ],
-          [
-            `Hi ${f.championFirst},`,
-            '',
-            `A quick question with no obligation attached. ${f.team} is starting out with AI and I would like to begin with ${inSentence(f.useCase)}. Would you be willing to share the prompt or approach that works for you?`,
-            '',
-            'A few lines in a reply is enough. I will turn it into something the team can use and credit it to you by name.',
-            '',
-            'If now is not a good time, a simple no is completely fine.',
-            '',
-            'Thanks,',
-            'AI Enablement',
-          ],
-        ],
   run: (f) => {
     // Own recipe: credit it. Starter recipe: say so, and thank the champion only as an example.
     const source = f.own
@@ -238,6 +267,7 @@ export function draftNextStep(kind, facts) {
   const f = {
     ...facts,
     own: facts.recipe.source === 'champion',
+    savedPrivate: Boolean(facts.recipe.savedPrivate),
     championFirst: facts.champion?.split(' ')[0] ?? '',
     credit: facts.champion ? `${facts.champion} in ${facts.championTeam}` : '',
     helpedText: `${facts.helped} ${facts.helped === 1 ? 'colleague' : 'colleagues'}`,

@@ -199,17 +199,21 @@ export function needsAttention(week = currentWeek()) {
   };
 }
 
-// The champion's own saved prompt for this use case if they have one, credited to them.
-// Otherwise the playbook's starter recipe, credited to no one.
+// The champion's own saved prompt for this use case, credited to them, but only if they marked it OK to share.
+// Otherwise the playbook's starter recipe, credited to no one. A private prompt's text never leaves here;
+// savedPrivate only lets "Ask a champion" ask whether they would share it.
 export function recipeFor(champion, useCase) {
   const starter = starterRecipe(useCase?.name);
   const saved =
     champion && useCase
-      ? db.prepare('SELECT prompt FROM recipes WHERE employee_id = ? AND use_case_id = ?').get(champion.id, useCase.id)
+      ? db
+          .prepare('SELECT prompt, shareable FROM recipes WHERE employee_id = ? AND use_case_id = ?')
+          .get(champion.id, useCase.id)
       : null;
-  return saved
-    ? { source: 'champion', author: champion.name, authorTeam: champion.team, prompt: saved.prompt, tip: starter.tip }
-    : { source: 'starter', author: null, authorTeam: null, prompt: starter.prompt, tip: starter.tip };
+  if (saved?.shareable) {
+    return { source: 'champion', author: champion.name, authorTeam: champion.team, prompt: saved.prompt, tip: starter.tip, savedPrivate: false };
+  }
+  return { source: 'starter', author: null, authorTeam: null, prompt: starter.prompt, tip: starter.tip, savedPrivate: Boolean(saved) };
 }
 
 // Champions credited in this week's pulse, with who they helped and on what.

@@ -522,6 +522,29 @@ label,
   margin-bottom: var(--space-2);
 }
 
+.field-note {
+  margin-top: var(--space-2);
+}
+
+/* Checkbox with a full-row touch target */
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 44px;
+  margin-top: var(--space-1);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.check-row input {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
 .hint {
   font-weight: 500;
   color: var(--text-2);

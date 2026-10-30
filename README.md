@@ -24,7 +24,7 @@ Colleagues who help others get started are credited as champions by the people t
 | Screen | Who it is for | What it does |
 | --- | --- | --- |
 | Overview | Enablement lead | This week's answer as a headline, three numbers, the team that needs attention (with the closest champion and three AI-drafted options: ask the champion, run a 15 minute session yourself, or share the recipe), and an AI-written leadership update. Tabs for Teams, Use cases (with risk tags) and Champions. |
-| Weekly pulse | Every employee | Did AI save you time? Roughly how much? Optional win, optional prompt (saved as your recipe for that use case and credited to you if shared) and "Did someone show you how?" |
+| Weekly pulse | Every employee | Did AI save you time? Roughly how much? Optional win, optional prompt (saved as your recipe for that use case, private unless you tick "OK to share this with other teams", and credited to you if shared) and "Did someone show you how?" |
 | My AI impact | Every employee | Hours saved this month, where the time came from, colleagues helped, wins in your own words, and "Copy summary for my review". |
 | Import | Admin | Upload a usage export CSV, preview matches and skipped rows, see the projected adoption change, then update the numbers. |
 

@@ -33,7 +33,7 @@ router.get('/me/:id', (req, res) => {
 });
 
 router.post('/pulse', (req, res) => {
-  const { employeeId, savedTime, amount, useCaseId, winText, promptText, taughtById } = req.body || {};
+  const { employeeId, savedTime, amount, useCaseId, winText, promptText, shareable, taughtById } = req.body || {};
   const id = Number(employeeId);
   const employee = db.prepare('SELECT id FROM employees WHERE id = ?').get(id);
   if (!employee) return res.status(400).json({ error: 'Choose who you are first.' });
@@ -72,14 +72,14 @@ router.post('/pulse', (req, res) => {
   // A pasted prompt becomes this person's recipe for the use case they picked. Leaving it blank keeps the old one.
   if (prompt && useCase) {
     db.prepare(
-      `INSERT INTO recipes (employee_id, use_case_id, prompt, week_start, updated_at) VALUES (?, ?, ?, ?, ?)
+      `INSERT INTO recipes (employee_id, use_case_id, prompt, shareable, week_start, updated_at) VALUES (?, ?, ?, ?, ?, ?)
        ON CONFLICT (employee_id, use_case_id) DO UPDATE SET
-         prompt = excluded.prompt, week_start = excluded.week_start, updated_at = excluded.updated_at`
-    ).run(id, useCase, prompt, week, now);
+         prompt = excluded.prompt, shareable = excluded.shareable, week_start = excluded.week_start, updated_at = excluded.updated_at`
+    ).run(id, useCase, prompt, shareable === true ? 1 : 0, week, now);
   }
 
   const impact = employeeImpact(id);
-  res.json({ ok: true, monthHours: impact.monthHours, monthLabel: impact.monthLabel, minutes, recipeSaved: Boolean(prompt && useCase) });
+  res.json({ ok: true, monthHours: impact.monthHours, monthLabel: impact.monthLabel, minutes, recipeSaved: Boolean(prompt && useCase), recipeShareable: Boolean(prompt && useCase && shareable === true) });
 });
 
 export default router;
