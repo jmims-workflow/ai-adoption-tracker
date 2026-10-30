@@ -24,9 +24,11 @@ Colleagues who help others get started are credited as champions by the people t
 | Screen | Who it is for | What it does |
 | --- | --- | --- |
 | Overview | Enablement lead | This week's answer as a headline, three numbers, the team that needs attention (with an AI-drafted invite), and an AI-written leadership update. Tabs for Teams, Use cases (with risk tags) and Champions. |
-| Weekly pulse | Every employee (phone-first) | Did AI save you time? Roughly how much? Optional win and "Did someone show you how?" |
-| My AI impact | Every employee (phone-first) | Hours saved this month, where the time came from, colleagues helped, wins in your own words, and "Copy summary for my review". |
+| Weekly pulse | Every employee | Did AI save you time? Roughly how much? Optional win and "Did someone show you how?" |
+| My AI impact | Every employee | Hours saved this month, where the time came from, colleagues helped, wins in your own words, and "Copy summary for my review". |
 | Import | Admin | Upload a usage export CSV, preview matches and skipped rows, see the projected adoption change, then update the numbers. |
+
+Works on any screen, so people can answer the pulse from Slack on a phone or a laptop in about 20 seconds.
 
 ### Screenshots
 
