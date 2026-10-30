@@ -1,5 +1,7 @@
 # AI Adoption & Impact Tracker
 
+**Live demo:** [open the app](https://ai-adoption-tracker-103749504031.us-east1.run.app/) (demo data, resets on restart)
+
 A web app for **Northstar Systems** (a fictional company with three products: FlowOS, Connect and Insight) that shows an AI enablement lead whether an AI rollout is working, while giving every employee a reason to participate.
 
 > All people, emails and numbers in this repo are fictional demo data.
@@ -117,4 +119,4 @@ See [CLAUDE.md](CLAUDE.md) for project conventions.
 
 ## Informed by
 
-- Duke Center for Computational Thinking, AI adoption framework (video): [link to be added](https://example.com/duke-cct-ai-adoption-framework)
+- Duke Center for Computational Thinking, AI adoption framework (video): [watch on YouTube](https://www.youtube.com/watch?v=ycx_p6lXmuI)
