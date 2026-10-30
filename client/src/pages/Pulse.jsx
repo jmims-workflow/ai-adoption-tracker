@@ -76,6 +76,7 @@ export default function Pulse() {
   const [promptText, setPromptText] = useState('');
   const [shareable, setShareable] = useState(false);
   const [taughtById, setTaughtById] = useState('');
+  const [showExtras, setShowExtras] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
@@ -100,7 +101,10 @@ export default function Pulse() {
     setError(null);
     if (!savedTime) return setError('Answer the first question to send.');
     if (savedTime === 'yes' && !amount) return setError('Choose roughly how much time you saved.');
-    if (askPrompt && promptText.trim() && !pickedUseCase) return setError('Pick what it was for so we can save your prompt as a recipe.');
+    if (askPrompt && promptText.trim() && !pickedUseCase) {
+      setShowExtras(true);
+      return setError('Pick what it was for so we can save your prompt as a recipe.');
+    }
     setSending(true);
     try {
       const r = await api.post('/pulse', {
@@ -136,7 +140,7 @@ export default function Pulse() {
         <p className="eyebrow">Weekly pulse</p>
         <h1 className="page-title small">How did AI help this week?</h1>
         <p className="muted" style={{ marginTop: 8 }}>
-          About 20 seconds. Every answer builds your own impact record.
+          Two quick questions, plus an optional win or prompt to share. Every answer builds your own impact record.
         </p>
       </header>
 
@@ -156,92 +160,106 @@ export default function Pulse() {
         </fieldset>
 
         {savedTime === 'yes' && (
-          <>
-            <fieldset>
-              <legend>Roughly how much?</legend>
-              <div className="choices two-col">
-                {Q2.map((o) => (
-                  <Choice key={o.value} name="amount" {...o} checked={amount === o.value} onChange={setAmount} />
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset>
-              <legend style={{ fontSize: 16 }}>
-                What was it for? <span className="hint">Optional</span>
-              </legend>
-              <div className="chips">
-                {useCases.map((u) => (
-                  <Choice
-                    key={u.id}
-                    name="usecase"
-                    value={String(u.id)}
-                    label={u.name}
-                    checked={useCaseId === String(u.id)}
-                    onChange={setUseCaseId}
-                  />
-                ))}
-              </div>
-            </fieldset>
-          </>
+          <fieldset>
+            <legend>Roughly how much?</legend>
+            <div className="choices two-col">
+              {Q2.map((o) => (
+                <Choice key={o.value} name="amount" {...o} checked={amount === o.value} onChange={setAmount} />
+              ))}
+            </div>
+          </fieldset>
         )}
 
-        <div>
-          <label htmlFor="win">
-            Share a win <span className="hint">Optional</span>
-          </label>
-          <textarea
-            id="win"
-            rows={3}
-            maxLength={500}
-            placeholder="For example: summarized a long ticket thread in two minutes."
-            value={winText}
-            onChange={(e) => setWinText(e.target.value)}
-          />
-        </div>
+        <button
+          type="button"
+          className="link-button"
+          aria-expanded={showExtras}
+          aria-controls="pulse-extras"
+          onClick={() => setShowExtras((v) => !v)}
+        >
+          Add a win or a prompt (optional)
+        </button>
 
-        {askPrompt && (
-          <div>
-            <label htmlFor="prompt">
-              Paste the prompt you used (optional){' '}
-              <span className="hint">
-                {pickedUseCase
-                  ? `Saved as your recipe for ${pickedUseCase.name}.`
-                  : 'Pick what it was for above to save it as your recipe.'}
-              </span>
-            </label>
-            <textarea
-              id="prompt"
-              rows={3}
-              maxLength={2000}
-              placeholder="For example: Summarize this thread in five bullets with the next action."
-              aria-describedby="prompt-note"
-              value={promptText}
-              onChange={(e) => setPromptText(e.target.value)}
-            />
-            <p id="prompt-note" className="hint field-note">
-              Remove customer names or private details before sharing.
-            </p>
-            <label className="check-row">
-              <input type="checkbox" checked={shareable} onChange={(e) => setShareable(e.target.checked)} />
-              <span>OK to share this with other teams (credited to me)</span>
-            </label>
+        {showExtras && (
+          <div id="pulse-extras" className="stack">
+            {savedTime === 'yes' && (
+              <fieldset>
+                <legend style={{ fontSize: 16 }}>
+                  What was it for? <span className="hint">Optional</span>
+                </legend>
+                <div className="chips">
+                  {useCases.map((u) => (
+                    <Choice
+                      key={u.id}
+                      name="usecase"
+                      value={String(u.id)}
+                      label={u.name}
+                      checked={useCaseId === String(u.id)}
+                      onChange={setUseCaseId}
+                    />
+                  ))}
+                </div>
+              </fieldset>
+            )}
+
+            <div>
+              <label htmlFor="win">
+                Share a win <span className="hint">Optional</span>
+              </label>
+              <textarea
+                id="win"
+                rows={3}
+                maxLength={500}
+                placeholder="For example: summarized a long ticket thread in two minutes."
+                value={winText}
+                onChange={(e) => setWinText(e.target.value)}
+              />
+            </div>
+
+            {askPrompt && (
+              <div>
+                <label htmlFor="prompt">
+                  Paste the prompt you used (optional){' '}
+                  <span className="hint">
+                    {pickedUseCase
+                      ? `Saved as your recipe for ${pickedUseCase.name}.`
+                      : 'Pick what it was for above to save it as your recipe.'}
+                  </span>
+                </label>
+                <textarea
+                  id="prompt"
+                  rows={3}
+                  maxLength={2000}
+                  placeholder="For example: Summarize this thread in five bullets with the next action."
+                  aria-describedby="prompt-note"
+                  value={promptText}
+                  onChange={(e) => setPromptText(e.target.value)}
+                />
+                <p id="prompt-note" className="hint field-note">
+                  Remove customer names or private details before sharing.
+                </p>
+                <label className="check-row">
+                  <input type="checkbox" checked={shareable} onChange={(e) => setShareable(e.target.checked)} />
+                  <span>OK to share this with other teams (credited to me)</span>
+                </label>
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="taught">
+                Did someone show you how? <span className="hint">Optional. They get credit as a champion.</span>
+              </label>
+              <select id="taught" value={taughtById} onChange={(e) => setTaughtById(e.target.value)}>
+                <option value="">No one this week</option>
+                {colleagues.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}, {c.team}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         )}
-
-        <div>
-          <label htmlFor="taught">
-            Did someone show you how? <span className="hint">Optional. They get credit as a champion.</span>
-          </label>
-          <select id="taught" value={taughtById} onChange={(e) => setTaughtById(e.target.value)}>
-            <option value="">No one this week</option>
-            {colleagues.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}, {c.team}
-              </option>
-            ))}
-          </select>
-        </div>
 
         <ErrorMessage error={error} />
         <button type="submit" className="btn btn-primary btn-block" disabled={sending}>
