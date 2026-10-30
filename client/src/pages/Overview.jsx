@@ -16,19 +16,24 @@ const NEXT_STEP_OPTIONS = [
     kind: 'ask',
     label: 'Ask a champion',
     copy: 'Copy note',
-    describe: (c) => `A short note asking ${c.name} if they would share their approach, with an easy way to say no.`,
+    describe: (c, own) =>
+      own
+        ? `A short note asking ${c.name} if their saved prompt can be shared, with an easy way to say no.`
+        : `A short note asking ${c.name} if they would share their approach, with an easy way to say no.`,
   },
   {
     kind: 'run',
     label: 'Run it yourself',
     copy: 'Copy invite',
-    describe: (c) => `An invite to a 15 minute session you lead, using ${c ? `${c.name}'s recipe with credit` : 'a starter recipe'}.`,
+    describe: (c, own) =>
+      `An invite to a 15 minute session you lead, using ${own ? `${c.name}'s saved prompt, credited to them` : 'the starter recipe'}.`,
   },
   {
     kind: 'share',
     label: 'Share the recipe',
     copy: 'Copy message',
-    describe: (c) => `A message to the team with a prompt and one tip${c ? `, credited to ${c.name}` : ''}.`,
+    describe: (c, own) =>
+      own ? `A message to the team with ${c.name}'s prompt, credited to them, and one tip.` : 'A message to the team with the starter recipe and one tip.',
   },
 ];
 
@@ -37,7 +42,8 @@ function NeedsAttention({ attention }) {
   const [active, setActive] = useState(null);
   const [loading, setLoading] = useState(null);
   const [error, setError] = useState(null);
-  const { champion } = attention;
+  const { champion, recipe } = attention;
+  const own = recipe.source === 'champion';
   const options = NEXT_STEP_OPTIONS.filter((o) => champion || o.kind !== 'ask');
   const current = options.find((o) => o.kind === active);
   const draft = active ? drafts[active] : null;
@@ -72,16 +78,25 @@ function NeedsAttention({ attention }) {
         <p style={{ marginTop: 12 }}>
           <strong>Closest champion: </strong>
           {champion.name}, {champion.team}
-          <span className="small muted champion-reason">{champion.reason}</span>
+          <span className="small muted line-below">{champion.reason}</span>
         </p>
       )}
+      <p style={{ marginTop: 12 }}>
+        <strong>Recipe: </strong>
+        {own ? `${recipe.author}'s saved prompt` : 'Starter recipe from the playbook'}
+        <span className="small muted line-below">
+          {own
+            ? 'Saved in their weekly pulse, so drafts credit it to them.'
+            : `${champion ? `${champion.name} has not saved a prompt for this yet, so` : 'No champion has saved a prompt for this yet, so'} drafts credit it to no one.`}
+        </span>
+      </p>
       <ul className="option-list" aria-label="Choose a next step to draft">
         {options.map((o) => (
           <li key={o.kind}>
             <AiButton loading={loading === o.kind} disabled={Boolean(loading)} aria-pressed={active === o.kind} onClick={() => generate(o.kind)}>
               {o.label}
             </AiButton>
-            <span className="small muted">{o.describe(champion)}</span>
+            <span className="small muted">{o.describe(champion, own)}</span>
           </li>
         ))}
       </ul>

@@ -1,5 +1,6 @@
 import { db } from './db.js';
 import { addDays, formatWeek } from './dates.js';
+import { starterRecipe } from './playbook.js';
 
 export const TEAMS = ['Sales', 'Customer Success', 'Marketing', 'Operations'];
 
@@ -182,19 +183,33 @@ export function needsAttention(week = currentWeek()) {
   const nextStep = useCase
     ? `Help ${lowest.team} start with ${inSentence(useCase.name)}, the most used low-risk use case. ` +
       (champion
-        ? `${champion.name} is the closest champion, so you could ask for their approach, run a short session with it yourself, or share it as a recipe.`
+        ? `${champion.name} is the closest champion. You can ask them to share their approach, run a short session yourself, or share a recipe with the team.`
         : 'Run a short hands-on session or share a starter prompt with the team.')
     : `Run a short hands-on session for ${lowest.team}.`;
 
   return {
     team: lowest,
     companyPct: company.pct,
+    recipe: recipeFor(champion, useCase),
     explanation,
     nextStep,
     champion,
     useCase: useCase ? { id: useCase.id, name: useCase.name, risk: useCase.risk, riskNote: useCase.riskNote } : null,
     needsAttention: lowest.pct < company.pct - 15,
   };
+}
+
+// The champion's own saved prompt for this use case if they have one, credited to them.
+// Otherwise the playbook's starter recipe, credited to no one.
+export function recipeFor(champion, useCase) {
+  const starter = starterRecipe(useCase?.name);
+  const saved =
+    champion && useCase
+      ? db.prepare('SELECT prompt FROM recipes WHERE employee_id = ? AND use_case_id = ?').get(champion.id, useCase.id)
+      : null;
+  return saved
+    ? { source: 'champion', author: champion.name, authorTeam: champion.team, prompt: saved.prompt, tip: starter.tip }
+    : { source: 'starter', author: null, authorTeam: null, prompt: starter.prompt, tip: starter.tip };
 }
 
 // Champions credited in this week's pulse, with who they helped and on what.

@@ -431,7 +431,7 @@ main {
 }
 
 /* Needs attention: three ways to act on the next step */
-.champion-reason {
+.line-below {
   display: block;
   margin-top: 2px;
 }

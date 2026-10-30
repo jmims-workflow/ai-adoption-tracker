@@ -68,159 +68,176 @@ function riskLine(facts) {
   return `${lead}: ${note.charAt(0).toLowerCase()}${note.slice(1)}.`;
 }
 
-// Starter prompt and one-line tip per use case. Grounds the "Run it yourself" and
-// "Share the recipe" drafts, live or demo, so the model never invents a recipe.
-const STARTER_RECIPES = {
-  'Call notes and follow-up emails': {
-    prompt: 'Here are my rough notes from a call with [customer]. Turn them into a short recap email with the decisions, next steps and owners. Keep it under 150 words.',
-    tip: 'Paste your notes right after the call while the details are fresh, then read the draft once before sending.',
-  },
-  'Account research briefs': {
-    prompt: 'Using only public information, write a one-page brief on [company]: what they do, recent news, likely priorities and three questions to ask them.',
-    tip: 'Check each fact against its source before you rely on it.',
-  },
-  'FlowOS support ticket summaries': {
-    prompt: 'Summarize this FlowOS ticket thread in five bullets: the problem, what has been tried, current status, open questions and who owns the next step.',
-    tip: 'Remove customer names and personal details first, and use the approved workspace.',
-  },
-  'Campaign copy drafts': {
-    prompt: 'Write three versions of [asset] for [audience] about [feature]. Keep each under 60 words and give each a different angle.',
-    tip: 'Ask for three options, pick the strongest, then edit it in your own voice.',
-  },
-  'Insight report narratives': {
-    prompt: 'Turn these Insight metrics into a short plain-language summary for a customer executive: what changed, why it matters and one recommendation.',
-    tip: 'Check every number against the source report before you send it.',
-  },
-  'Contract and pricing review': {
-    prompt: 'List the clauses in this contract that cover renewal, pricing changes and termination, and quote each one in full.',
-    tip: 'Use it to find clauses faster, then send anything important to legal.',
-  },
-  'Process documentation': {
-    prompt: 'I will describe a task I do regularly. Turn it into a numbered step-by-step guide a new hire could follow, then list anything I left unclear as questions.',
-    tip: 'Talk it through as if you were explaining it to a new colleague, then answer the questions it asks.',
-  },
-};
-
-const GENERIC_RECIPE = {
-  prompt: 'Here is a task I do every week: [describe it]. Suggest a first draft I can edit, and tell me what extra information would make it better.',
-  tip: 'Start with a low-risk internal task and read every draft before you use it.',
-};
-
-export function starterRecipe(useCase) {
-  return STARTER_RECIPES[useCase] || GENERIC_RECIPE;
-}
-
 const NO_CLAIMS =
   'Never say or imply that the champion has offered, agreed, volunteered or committed to anything. ';
+
+// Credit follows the recipe: a champion's own saved prompt is credited to them by name;
+// the playbook's starter recipe is labeled "Starter recipe" and credited to no one.
+const RECIPE_RULES = {
+  champion: (f) =>
+    `The recipe prompt in the data is ${f.champion}'s own prompt, saved in their weekly pulse. Quote it exactly as given and credit it to ${f.champion} by name. `,
+  starter: (f) =>
+    'The recipe prompt in the data is the starter recipe from the enablement playbook. Quote it exactly as given and call it the "Starter recipe". ' +
+    `Do not credit the recipe or tip to anyone${f.champion ? `, and do not say or imply it came from ${f.champion}` : ''}. `,
+};
 
 const NEXT_STEP_INSTRUCTIONS = {
   ask: (f) =>
     `Draft a short, low-pressure note (under 80 words) from the AI enablement lead to ${f.champion}, an AI champion on the ${f.championTeam} team. ` +
-    `Ask whether they would be willing to share their approach to ${inSentence(f.useCase)} so the ${f.team} team can get started. ` +
-    'Keep the ask small, say it will be credited to them by name, and make it easy to say no, with no reason needed. ' +
+    (f.own
+      ? `They saved a prompt for ${inSentence(f.useCase)} in their weekly pulse. Ask whether they would be happy for it to be shared with the ${f.team} team, credited to them by name, with nothing else needed from them. Do not quote the prompt. `
+      : `Ask whether they would be willing to share their approach to ${inSentence(f.useCase)} so the ${f.team} team can get started. Keep the ask small and say it would be credited to them by name. `) +
+    'Make it easy to say no, with no reason needed. ' +
     NO_CLAIMS +
     `Start with "Hi ${f.championFirst}," and end with a sign-off from AI Enablement. Plain text only.`,
   run: (f) =>
-    `Draft a short invite (under 90 words) from the AI enablement lead to the ${f.team} team for a 15 minute session that the lead runs. ` +
-    `It covers ${inSentence(f.useCase)} using the starter recipe in the data, ` +
-    (f.champion ? `and credits ${f.champion} (${f.championTeam}) by name for the recipe. ` : 'credited to our AI champions. ') +
+    `Draft a short invite (under 90 words) from the AI enablement lead to the ${f.team} team for a 15 minute session that the lead runs on ${inSentence(f.useCase)}, using the recipe in the data. ` +
+    RECIPE_RULES[f.recipe.source](f) +
+    (!f.own && f.champion
+      ? `You may thank ${f.champion} (${f.championTeam}) for being a good example of this use case, but not for the recipe. `
+      : '') +
     'Make it practical: bring one real task, leave with a draft. Mention the risk guidance in one short clause. ' +
     NO_CLAIMS +
     'Start with a greeting line and end with a sign-off from AI Enablement. Plain text only.',
   share: (f) =>
     `Draft a short message (under 100 words) from the AI enablement lead to the ${f.team} team sharing a prompt for ${inSentence(f.useCase)}. ` +
-    'Include the starter recipe prompt from the data on its own line, lightly adapted if helpful, followed by a one-line tip starting with "Tip:". ' +
-    (f.champion ? `Credit ${f.champion} (${f.championTeam}) by name. ` : '') +
+    RECIPE_RULES[f.recipe.source](f) +
+    (f.own ? 'Put the prompt on its own line. ' : 'Put the label "Starter recipe:" on its own line, then the prompt on the next line. ') +
+    'Follow it with the tip from the data on one line starting with "Tip:". ' +
     NO_CLAIMS +
     'Start with a greeting line and end with a sign-off from AI Enablement. Plain text only.',
 };
 
 const NEXT_STEP_DEMOS = {
-  ask: (f) => [
-    [
-      `Hi ${f.championFirst},`,
-      '',
-      `${f.team} is just getting started with AI, and ${inSentence(f.useCase)} looks like an easy first step for them. You have helped ${f.helpedText} get going, so I wondered if you would be open to sharing how you approach it.`,
-      '',
-      'Even just the prompt you use and one tip would be plenty. I can do the rest, and it will be credited to you by name.',
-      '',
-      'No pressure at all. If you are busy or would rather not, just reply "not now" and that is completely fine.',
-      '',
-      'Thanks,',
-      'AI Enablement',
-    ],
-    [
-      `Hi ${f.championFirst},`,
-      '',
-      `A quick question with no obligation attached. ${f.team} is starting out with AI and I would like to begin with ${inSentence(f.useCase)}. Would you be willing to share the prompt or approach that works for you?`,
-      '',
-      'A few lines in a reply is enough. I will turn it into something the team can use and credit it to you by name.',
-      '',
-      'If now is not a good time, a simple no is completely fine.',
-      '',
-      'Thanks,',
-      'AI Enablement',
-    ],
-  ],
-  run: (f) => [
-    [
-      `Hi ${f.team} team,`,
-      '',
-      `I am running a 15 minute session on ${inSentence(f.useCase)}, the most used low-risk way people at Northstar are saving time with AI. ${f.credit ? `We will use a recipe from ${f.credit}, so thanks to ${f.championFirst} for the approach.` : ''}`.trim(),
-      '',
-      `Bring one task you do regularly. You will leave with a first draft and a prompt you can reuse. ${riskLine(f)}`.trim(),
-      '',
-      'Reply with a time that suits you and I will send a calendar invite.',
-      '',
-      'Thanks,',
-      'AI Enablement',
-    ],
-    [
-      `Hi ${f.team} team,`,
-      '',
-      `Got 15 minutes? I will walk through a simple way to use AI for ${inSentence(f.useCase)}${f.credit ? `, based on a recipe from ${f.credit}` : ''}.`,
-      '',
-      `No prep and no experience needed. Bring one real task and leave with a draft you can use. ${riskLine(f)}`.trim(),
-      '',
-      'Reply with a time that works and I will send a calendar invite.',
-      '',
-      'Thanks,',
-      'AI Enablement',
-    ],
-  ],
-  share: (f) => [
-    [
-      `Hi ${f.team} team,`,
-      '',
-      `Here is a prompt to try for ${inSentence(f.useCase)}${f.credit ? `, with credit to ${f.credit} for the recipe` : ''}. Paste it into the approved AI tool and fill in the brackets:`,
-      '',
-      f.recipe.prompt,
-      '',
-      `Tip: ${f.recipe.tip}`,
-      '',
-      'Thanks,',
-      'AI Enablement',
-    ],
-    [
-      `Hi ${f.team} team,`,
-      '',
-      `One quick thing to try this week. This prompt for ${inSentence(f.useCase)} comes from a recipe by ${f.credit || 'our AI champions'}:`,
-      '',
-      f.recipe.prompt,
-      '',
-      `Tip: ${f.recipe.tip}`,
-      '',
-      'Reply if you get stuck and I will help.',
-      '',
-      'Thanks,',
-      'AI Enablement',
-    ],
-  ],
+  ask: (f) =>
+    f.own
+      ? [
+          [
+            `Hi ${f.championFirst},`,
+            '',
+            `Thank you for saving your prompt for ${inSentence(f.useCase)} in the weekly pulse. ${f.team} is just getting started with AI, and I think it could really help them.`,
+            '',
+            'Would you be happy for me to share it with the team? It would be credited to you by name, and you would not need to do anything else.',
+            '',
+            'If you would rather keep it to yourself, just reply "not now" and that is completely fine.',
+            '',
+            'Thanks,',
+            'AI Enablement',
+          ],
+          [
+            `Hi ${f.championFirst},`,
+            '',
+            `A quick question with no obligation attached. You saved a prompt for ${inSentence(f.useCase)} in your weekly pulse, and it looks like a good fit for ${f.team}, who are starting out with AI.`,
+            '',
+            'Are you OK with me sharing it with the team, credited to you by name? A one-word reply is plenty.',
+            '',
+            'If you would prefer not, a simple no is completely fine.',
+            '',
+            'Thanks,',
+            'AI Enablement',
+          ],
+        ]
+      : [
+          [
+            `Hi ${f.championFirst},`,
+            '',
+            `${f.team} is just getting started with AI, and ${inSentence(f.useCase)} looks like an easy first step for them. You have helped ${f.helpedText} get going, so I wondered if you would be open to sharing how you approach it.`,
+            '',
+            'Even just the prompt you use and one tip would be plenty. I can do the rest, and it would be credited to you by name.',
+            '',
+            'No pressure at all. If you are busy or would rather not, just reply "not now" and that is completely fine.',
+            '',
+            'Thanks,',
+            'AI Enablement',
+          ],
+          [
+            `Hi ${f.championFirst},`,
+            '',
+            `A quick question with no obligation attached. ${f.team} is starting out with AI and I would like to begin with ${inSentence(f.useCase)}. Would you be willing to share the prompt or approach that works for you?`,
+            '',
+            'A few lines in a reply is enough. I will turn it into something the team can use and credit it to you by name.',
+            '',
+            'If now is not a good time, a simple no is completely fine.',
+            '',
+            'Thanks,',
+            'AI Enablement',
+          ],
+        ],
+  run: (f) => {
+    // Own recipe: credit it. Starter recipe: say so, and thank the champion only as an example.
+    const source = f.own
+      ? `We will use a recipe from ${f.credit}, so thanks to ${f.championFirst} for the prompt.`
+      : 'We will work from the starter recipe in our playbook.';
+    const example = !f.own && f.champion ? ` Thanks to ${f.credit} for being a good example of this kind of work.` : '';
+    return [
+      [
+        `Hi ${f.team} team,`,
+        '',
+        `I am running a 15 minute session on ${inSentence(f.useCase)}, the most used low-risk way people at Northstar are saving time with AI. ${source}${example}`,
+        '',
+        `Bring one task you do regularly. You will leave with a first draft and a prompt you can reuse. ${riskLine(f)}`.trim(),
+        '',
+        'Reply with a time that suits you and I will send a calendar invite.',
+        '',
+        'Thanks,',
+        'AI Enablement',
+      ],
+      [
+        `Hi ${f.team} team,`,
+        '',
+        `Got 15 minutes? I will walk through a simple way to use AI for ${inSentence(f.useCase)}, ${f.own ? `based on a recipe from ${f.credit}` : 'using a starter recipe from our playbook'}.${example}`,
+        '',
+        `No prep and no experience needed. Bring one real task and leave with a draft you can use. ${riskLine(f)}`.trim(),
+        '',
+        'Reply with a time that works and I will send a calendar invite.',
+        '',
+        'Thanks,',
+        'AI Enablement',
+      ],
+    ];
+  },
+  share: (f) => {
+    const recipe = f.own ? [f.recipe.prompt] : ['Starter recipe:', f.recipe.prompt];
+    const paste = f.own
+      ? 'Paste it into the approved AI tool and adapt it to your task:'
+      : 'Paste it into the approved AI tool and adapt it to your task.';
+    return [
+      [
+        `Hi ${f.team} team,`,
+        '',
+        `Here is a prompt to try for ${inSentence(f.useCase)}${f.own ? `, from ${f.credit}` : ''}. ${paste}`,
+        '',
+        ...recipe,
+        '',
+        `Tip: ${f.recipe.tip}`,
+        '',
+        'Thanks,',
+        'AI Enablement',
+      ],
+      [
+        `Hi ${f.team} team,`,
+        '',
+        f.own
+          ? `One quick thing to try this week. This prompt for ${inSentence(f.useCase)} comes from ${f.credit}:`
+          : `One quick thing to try this week, for ${inSentence(f.useCase)}.`,
+        '',
+        ...recipe,
+        '',
+        `Tip: ${f.recipe.tip}`,
+        '',
+        'Reply if you get stuck and I will help.',
+        '',
+        'Thanks,',
+        'AI Enablement',
+      ],
+    ];
+  },
 };
 
 export function draftNextStep(kind, facts) {
   const f = {
     ...facts,
+    own: facts.recipe.source === 'champion',
     championFirst: facts.champion?.split(' ')[0] ?? '',
     credit: facts.champion ? `${facts.champion} in ${facts.championTeam}` : '',
     helpedText: `${facts.helped} ${facts.helped === 1 ? 'colleague' : 'colleagues'}`,

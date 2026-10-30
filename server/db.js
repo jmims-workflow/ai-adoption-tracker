@@ -53,6 +53,16 @@ export function createSchema() {
       UNIQUE (employee_id, week_start)
     );
 
+    -- A person's own prompt for a use case, pasted in the weekly pulse. Latest one wins.
+    CREATE TABLE IF NOT EXISTS recipes (
+      employee_id INTEGER NOT NULL REFERENCES employees(id),
+      use_case_id INTEGER NOT NULL REFERENCES use_cases(id),
+      prompt TEXT NOT NULL,
+      week_start TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (employee_id, use_case_id)
+    );
+
     CREATE TABLE IF NOT EXISTS imports (
       id INTEGER PRIMARY KEY,
       filename TEXT NOT NULL,
@@ -66,6 +76,7 @@ export function createSchema() {
 export function resetSchema() {
   db.exec(`
     DROP TABLE IF EXISTS imports;
+    DROP TABLE IF EXISTS recipes;
     DROP TABLE IF EXISTS pulse_responses;
     DROP TABLE IF EXISTS usage_weekly;
     DROP TABLE IF EXISTS use_cases;

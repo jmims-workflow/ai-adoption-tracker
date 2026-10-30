@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { draftNextStep, leadershipUpdate, reviewSummary, starterRecipe } from '../ai.js';
+import { draftNextStep, leadershipUpdate, reviewSummary } from '../ai.js';
 import { employeeImpact, leadershipFacts, needsAttention } from '../metrics.js';
 
 const router = Router();
@@ -25,7 +25,7 @@ router.post('/next-step', async (req, res, next) => {
       useCase,
       risk: a.useCase?.risk ?? null,
       riskNote: a.useCase?.riskNote ?? '',
-      recipe: starterRecipe(a.useCase?.name),
+      recipe: a.recipe,
     };
     res.json(await draftNextStep(kind, facts));
   } catch (err) {
