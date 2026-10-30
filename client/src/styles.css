@@ -430,6 +430,35 @@ main {
   }
 }
 
+/* Needs attention: three ways to act on the next step */
+.champion-reason {
+  display: block;
+  margin-top: 2px;
+}
+
+.option-list {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.option-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.option-list .btn {
+  min-width: 190px;
+}
+
+.option-list .small {
+  flex: 1 1 220px;
+}
+
 /* AI output */
 .ai-output {
   margin-top: var(--space-4);

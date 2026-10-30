@@ -1,25 +1,33 @@
 import { Router } from 'express';
-import { draftInvite, leadershipUpdate, reviewSummary } from '../ai.js';
+import { draftNextStep, leadershipUpdate, reviewSummary, starterRecipe } from '../ai.js';
 import { employeeImpact, leadershipFacts, needsAttention } from '../metrics.js';
 
 const router = Router();
 
-router.post('/invite', async (req, res, next) => {
+const NEXT_STEP_KINDS = ['ask', 'run', 'share'];
+
+// Drafts for the "Needs attention" card: ask a champion, run it yourself, or share the recipe.
+router.post('/next-step', async (req, res, next) => {
   try {
+    const kind = req.body?.kind;
+    if (!NEXT_STEP_KINDS.includes(kind)) return res.status(400).json({ error: 'Unknown draft type.' });
     const a = needsAttention();
+    if (kind === 'ask' && !a.champion) return res.status(400).json({ error: 'No champion to ask yet.' });
+    const useCase = a.useCase?.name ?? 'everyday drafting';
     const facts = {
       team: a.team.team,
       teamActive: a.team.active,
       teamTotal: a.team.total,
       neverTried: a.team.neverTried,
-      champion: a.champion?.name ?? 'one of our AI champions',
+      champion: a.champion?.name ?? null,
       championTeam: a.champion?.team ?? null,
       helped: a.champion?.helped ?? 0,
-      useCase: a.useCase?.name ?? 'everyday drafting',
+      useCase,
       risk: a.useCase?.risk ?? null,
       riskNote: a.useCase?.riskNote ?? '',
+      recipe: starterRecipe(a.useCase?.name),
     };
-    res.json(await draftInvite(facts));
+    res.json(await draftNextStep(kind, facts));
   } catch (err) {
     next(err);
   }

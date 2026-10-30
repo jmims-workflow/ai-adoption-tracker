@@ -3,6 +3,9 @@ import { addDays, formatWeek } from './dates.js';
 
 export const TEAMS = ['Sales', 'Customer Success', 'Marketing', 'Operations'];
 
+// Use case name for mid-sentence text: lowercase first letter, but keep product names as written.
+export const inSentence = (name) => (/^(FlowOS|Connect|Insight)\b/.test(name) ? name : name.charAt(0).toLowerCase() + name.slice(1));
+
 const round1 = (n) => Math.round(n * 10) / 10;
 const pct = (part, whole) => (whole ? Math.round((part / whole) * 100) : 0);
 
@@ -127,11 +130,43 @@ export function teamSeries() {
   return { weeks, series, overall };
 }
 
+// Use cases a team has saved time on, most minutes first.
+function teamUseCases(team) {
+  return useCaseStats(team).filter((u) => u.minutes > 0);
+}
+
+// Closest champion to a team: someone on the team first, then a team doing similar work
+// (most shared use cases), then the top champion overall. Returns the champion and a one-line reason.
+export function suggestChampion(team, all = champions()) {
+  if (!all.length) return null;
+  const pick = (c, reason) => ({ id: c.id, name: c.name, team: c.team, helped: c.learners.length, reason });
+  const helpedText = (c) => `${c.learners.length} ${c.learners.length === 1 ? 'colleague' : 'colleagues'}`;
+
+  const sameTeam = all.find((c) => c.team === team);
+  if (sameTeam) return pick(sameTeam, `On the ${team} team and has helped ${helpedText(sameTeam)} start.`);
+
+  const ours = teamUseCases(team);
+  const similar = all
+    .map((c) => {
+      const theirs = new Set(teamUseCases(c.team).map((u) => u.id));
+      return { c, shared: ours.filter((u) => theirs.has(u.id)) };
+    })
+    .filter((x) => x.shared.length > 0)
+    .sort((a, b) => b.shared.length - a.shared.length || b.c.learners.length - a.c.learners.length)[0];
+  if (similar) {
+    const work = inSentence(similar.shared[0].name);
+    return pick(similar.c, `${similar.c.team} also uses AI for ${work}, like ${team}.`);
+  }
+
+  const top = all[0];
+  return pick(top, `Top champion overall, with ${helpedText(top)} helped so far.`);
+}
+
 export function needsAttention(week = currentWeek()) {
   const teams = teamAdoption(week);
   const company = adoption(week);
   const lowest = [...teams].sort((a, b) => a.pct - b.pct || a.active - b.active)[0];
-  const topChampion = champions()[0] || null;
+  const champion = suggestChampion(lowest.team);
 
   // Most-used, lowest-risk use case: prefer green ones this team already uses, else the top green one overall.
   const teamGreen = useCaseStats(lowest.team).filter((u) => u.risk === 'green' && u.minutes > 0);
@@ -143,20 +178,44 @@ export function needsAttention(week = currentWeek()) {
     `${lowest.active} of ${lowest.total} people in ${lowest.team} used AI this week, compared with ${company.pct}% across the company.` +
     (neverTried > 0 ? ` ${neverTried} ${neverTried === 1 ? 'has' : 'have'} never tried it.` : '');
 
-  const nextStep =
-    topChampion && useCase
-      ? `Pair ${lowest.team} with ${topChampion.name}, who has helped ${topChampion.learners.length} colleagues start, for a 30 minute session on ${useCase.name.toLowerCase()}. It is the most used low-risk use case.`
-      : `Schedule a 30 minute hands-on session for ${lowest.team}.`;
+  // Never say a champion has offered or agreed to anything: the lead decides how much to ask of them.
+  const nextStep = useCase
+    ? `Help ${lowest.team} start with ${inSentence(useCase.name)}, the most used low-risk use case. ` +
+      (champion
+        ? `${champion.name} is the closest champion, so you could ask for their approach, run a short session with it yourself, or share it as a recipe.`
+        : 'Run a short hands-on session or share a starter prompt with the team.')
+    : `Run a short hands-on session for ${lowest.team}.`;
 
   return {
     team: lowest,
     companyPct: company.pct,
     explanation,
     nextStep,
-    champion: topChampion ? { id: topChampion.id, name: topChampion.name, team: topChampion.team, helped: topChampion.learners.length } : null,
+    champion,
     useCase: useCase ? { id: useCase.id, name: useCase.name, risk: useCase.risk, riskNote: useCase.riskNote } : null,
     needsAttention: lowest.pct < company.pct - 15,
   };
+}
+
+// Champions credited in this week's pulse, with who they helped and on what.
+export function weekChampions(week = currentWeek()) {
+  const rows = db
+    .prepare(
+      `SELECT c.name AS champion, c.team AS championTeam, l.name AS learner, l.team AS learnerTeam, uc.name AS useCase
+       FROM pulse_responses p
+       JOIN employees c ON c.id = p.taught_by_id
+       JOIN employees l ON l.id = p.employee_id
+       LEFT JOIN use_cases uc ON uc.id = p.use_case_id
+       WHERE p.week_start = ?
+       ORDER BY c.name, l.name`
+    )
+    .all(week);
+  const byChampion = new Map();
+  for (const r of rows) {
+    if (!byChampion.has(r.champion)) byChampion.set(r.champion, { name: r.champion, team: r.championTeam, helped: [] });
+    byChampion.get(r.champion).helped.push({ name: r.learner, team: r.learnerTeam, useCase: r.useCase });
+  }
+  return [...byChampion.values()];
 }
 
 export function headline(week = currentWeek()) {
@@ -216,7 +275,8 @@ export function leadershipFacts() {
     pulseResponses: o.sources.pulseResponses,
     teams: teams.map((t) => ({ ...t, change: t.pct - (teamsPrev.find((p) => p.team === t.team)?.pct ?? 0) })),
     topUseCases: topUseCases.map((u) => ({ name: u.name, hours: u.hours, risk: u.risk })),
-    champions: champs.map((c) => ({ name: c.name, team: c.team, helped: c.learners.length })),
+    topChampionsOverall: champs.map((c) => ({ name: c.name, team: c.team, helped: c.learners.length })),
+    championsThisWeek: weekChampions(week),
     attention: {
       team: o.attention.team.team,
       explanation: o.attention.explanation,

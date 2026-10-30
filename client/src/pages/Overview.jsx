@@ -11,20 +11,48 @@ const TEAM_COLORS = {
   Operations: '#6250d6',
 };
 
-function NeedsAttention({ attention }) {
-  const [invite, setInvite] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+const NEXT_STEP_OPTIONS = [
+  {
+    kind: 'ask',
+    label: 'Ask a champion',
+    copy: 'Copy note',
+    describe: (c) => `A short note asking ${c.name} if they would share their approach, with an easy way to say no.`,
+  },
+  {
+    kind: 'run',
+    label: 'Run it yourself',
+    copy: 'Copy invite',
+    describe: (c) => `An invite to a 15 minute session you lead, using ${c ? `${c.name}'s recipe with credit` : 'a starter recipe'}.`,
+  },
+  {
+    kind: 'share',
+    label: 'Share the recipe',
+    copy: 'Copy message',
+    describe: (c) => `A message to the team with a prompt and one tip${c ? `, credited to ${c.name}` : ''}.`,
+  },
+];
 
-  async function draft() {
-    setLoading(true);
+function NeedsAttention({ attention }) {
+  const [drafts, setDrafts] = useState({});
+  const [active, setActive] = useState(null);
+  const [loading, setLoading] = useState(null);
+  const [error, setError] = useState(null);
+  const { champion } = attention;
+  const options = NEXT_STEP_OPTIONS.filter((o) => champion || o.kind !== 'ask');
+  const current = options.find((o) => o.kind === active);
+  const draft = active ? drafts[active] : null;
+
+  async function generate(kind) {
+    setLoading(kind);
+    setActive(kind);
     setError(null);
     try {
-      setInvite(await api.post('/ai/invite'));
+      const result = await api.post('/ai/next-step', { kind });
+      setDrafts((d) => ({ ...d, [kind]: result }));
     } catch (e) {
       setError(e.message);
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   }
 
@@ -40,17 +68,31 @@ function NeedsAttention({ attention }) {
           <RiskTag risk={attention.useCase.risk} /> <span className="small">{attention.useCase.riskNote}</span>
         </p>
       )}
-      <div className="btn-row">
-        <AiButton loading={loading} onClick={draft}>
-          {invite ? 'Draft again' : 'Draft the invite'}
-        </AiButton>
-        {invite && <CopyButton text={invite.text} label="Copy invite" />}
-      </div>
+      {champion && (
+        <p style={{ marginTop: 12 }}>
+          <strong>Closest champion: </strong>
+          {champion.name}, {champion.team}
+          <span className="small muted champion-reason">{champion.reason}</span>
+        </p>
+      )}
+      <ul className="option-list" aria-label="Choose a next step to draft">
+        {options.map((o) => (
+          <li key={o.kind}>
+            <AiButton loading={loading === o.kind} disabled={Boolean(loading)} aria-pressed={active === o.kind} onClick={() => generate(o.kind)}>
+              {o.label}
+            </AiButton>
+            <span className="small muted">{o.describe(champion)}</span>
+          </li>
+        ))}
+      </ul>
       <ErrorMessage error={error} />
-      {invite && (
+      {draft && (
         <div aria-live="polite">
-          <div className="ai-output">{invite.text}</div>
-          <DemoNote demo={invite.demo} />
+          <div className="ai-output">{draft.text}</div>
+          <div className="btn-row">
+            <CopyButton text={draft.text} label={current?.copy ?? 'Copy'} />
+          </div>
+          <DemoNote demo={draft.demo} />
         </div>
       )}
     </Card>
